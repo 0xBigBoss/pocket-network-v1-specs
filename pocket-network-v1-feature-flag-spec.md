@@ -1,6 +1,31 @@
+---
+author: [0xbigboss](https://0xbigboss.github.com/)
+version: 0.1.0-wip
+---
+
 # Abstract
 
-This document describes the proposed changes to the Pocket Network protocol to allow for the activation of feature flags.
+This document describes the proposed changes to the Pocket Network protocol to allow for the activation of feature flags. A feature flag is a way to enable or disable a feature in a software application. Feature flags are used to enable or disable features during runtime without deploying new code. This allows for the network to be more flexible and adapt to the needs of the community.
+
+Feature flags as they relate to the Pocket Network protocol are a way to enable or disable features in the protocol without having to upgrade the protocol. This allows for the network to be more flexible and adapt to the needs of the community.
+
+A feature with respect to Pocket Network can be one of the following:
+
+- Governance controlled parameters
+- Altering protocol functionality
+- A new consensus breaking protocol version
+
+Each feature above needs a block height to be activated. The block height is used to determine when the feature will be activated. A feature is enabled if the current block height is greater than or equal to the activation block height. A feature is disabled if the current block height is less than the activation block height. A feature can also be disabled by setting the activation block height to -1.
+
+## Governance Controlled Parameters
+
+The Pocket Network protocol has a set of governance controlled parameters that can be modified by the DAO. These parameters are used to control the behavior of the protocol. A list of the current governance controlled parameters can be found [TODO here](#TODO). For each parameter, there is an owner address elected to by the DAO. The owner address is the only address that can modify the parameter.
+
+These parameters are currently controlled by the DAO and can be modified by submitting a governance transaction. The governance parameter change transaction is a message type that is handled by the utility module. The utility module is responsible for handling all governance transactions.
+
+## Motivation
+
+The following is separated into two sections, the first section describes the motivation for the activation of feature flags and the second section describes the motivation for the modification of governance parameters.
 
 ## Modules Affected
 
@@ -10,13 +35,7 @@ This document describes the proposed changes to the Pocket Network protocol to a
 - CLI
 - RPC
 
-## Motivation
-
-The following is separated into two sections, the first section describes the motivation for the activation of feature flags and the second section describes the motivation for the modification of governance parameters.
-
 ### Feature Flags
-
-A feature flag is a way to enable or disable a feature in a software application. Feature flags are used to enable or disable features during runtime without deploying new code. This allows for the network to be more flexible and adapt to the needs of the community.
 
 ### Persistence
 
@@ -27,7 +46,6 @@ The persistence module currently has feature flags as part of [it's interface](
 	GetIntFlag(paramName string, height int64) (int, bool, error)
 	GetStringFlag(paramName string, height int64) (string, bool, error)
 	GetBytesFlag(paramName string, height int64) ([]byte, bool, error)
-
 ```
 
 There should be a simple boolean type flag included in this interface to allow for simple feature flags to be activated or deactivated.
