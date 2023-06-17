@@ -3,80 +3,81 @@ author: [0xbigboss](https://0xbigboss.github.com/)
 version: 0.1.0-wip
 ---
 
-# Abstract
+# Pocket Network Feature Flags Tech Spec
 
-This document describes the proposed changes to the Pocket Network protocol to allow for the activation of feature flags. A feature flag is a way to enable or disable a feature in a software application. Feature flags are used to enable or disable features during runtime without deploying new code. This allows for the network to be more flexible and adapt to the needs of the community.
+## Abstract
 
-Feature flags as they relate to the Pocket Network protocol are a way to enable or disable features in the protocol without having to upgrade the protocol. This allows for the network to be more flexible and adapt to the needs of the community.
+This document describes the proposed changes to the Pocket Network protocol to allow for the activation of feature flags at specific block heights. A feature flag in the Pocket Network protocol refers to a mechanism that enables or disables specific features at a specific block height, without necessitating an upgrade to the protocol.
 
-A feature with respect to Pocket Network can be one of the following:
+The following three types of features can be controlled using feature flags:
 
-- Governance controlled parameters
-- Altering protocol functionality
-- A new consensus breaking protocol version
+- Governance controlled parameters: These parameters, modifiable by the DAO, control the behavior of the protocol.
+- Alteration of protocol functionality: This refers to changes in the way the protocol functions, which can be enabled or disabled.
+- New consensus-breaking protocol versions: These are major changes to the protocol that can disrupt consensus if not managed properly.
 
-Each feature above needs a block height to be activated. The block height is used to determine when the feature will be activated. A feature is enabled if the current block height is greater than or equal to the activation block height. A feature is disabled if the current block height is less than the activation block height. A feature can also be disabled by setting the activation block height to -1.
+The activation of a feature is determined by the block height, with the feature being enabled if the current block height is greater than or equal to the activation block height. Conversely, the feature is disabled if the current block height is less than the activation block height. A feature can also be permanently disabled by setting the activation block height to -1.
 
 ## Governance Controlled Parameters
 
-The Pocket Network protocol has a set of governance controlled parameters that can be modified by the DAO. These parameters are used to control the behavior of the protocol. A list of the current governance controlled parameters can be found [TODO here](#TODO). For each parameter, there is an owner address elected to by the DAO. The owner address is the only address that can modify the parameter.
+The Pocket Network protocol has a set of governance controlled parameters that can be modified by the DAO. These parameters control the behavior of the protocol, and their list can be found [TODO here](#TODO). For each parameter, there is an owner address elected by the DAO, and this address is the only one that can modify the parameter.
 
-These parameters are currently controlled by the DAO and can be modified by submitting a governance transaction. The governance parameter change transaction is a message type that is handled by the utility module. The utility module is responsible for handling all governance transactions.
+These parameters are controlled by the DAO and can be modified by submitting a governance transaction. The governance parameter change transaction is a message type that is handled by the utility module, which is responsible for handling all governance transactions.
 
-## Motivation
+To enable a new governance parameter, the `pocket gov enable` command can be used, which requires the block height (retrieved using the `curl -s -X POST ${POCKET_ENDPOINT}/v1/query/height` command) and the DAO as inputs. Once a parameter is enabled, it can be modified using the `POKT gov change_param` command.
 
-The following is separated into two sections, the first section describes the motivation for the activation of feature flags and the second section describes the motivation for the modification of governance parameters.
-
-## Modules Affected
-
-- Persistence
-- Utility
-  - New Message Type: `MessageFeatureFlagUpdate`
-- CLI
-- RPC
-
-### Feature Flags
+## Feature Flags
 
 ### Persistence
 
-The persistence module currently has feature flags as part of [it's interface](https://github.com/pokt-network/pocket/blob/a29b654b808b0239d4ed3dc37131317168b8aaf0/shared/modules/persistence_module.go#L219-L221).
-
-```go
-// Flags
-	GetIntFlag(paramName string, height int64) (int, bool, error)
-	GetStringFlag(paramName string, height int64) (string, bool, error)
-	GetBytesFlag(paramName string, height int64) ([]byte, bool, error)
-```
-
-There should be a simple boolean type flag included in this interface to allow for simple feature flags to be activated or deactivated.
+The persistence module currently has feature flags as part of [it's interface](https://github.com/pokt-network/pocket/blob/a29b654b808b0239d4ed3dc37131317168b8aaf0/shared/modules/persistence_module.go#L219-L221). These flags can be of type int, string, or byte. To allow for simple feature flags to be activated or deactivated, a new boolean type flag should be added to this interface.
 
 ### Utility
 
-To introduce a new feature flag, a new feature flag name and activation block height must be included in a new Transaction Message type. The feature flag name is used to identify the feature flag and the activation block height is used to determine when the feature flag will be activated.
+Introducing a new feature flag involves including a new feature flag name and activation block height in a new Transaction Message type. The feature flag name identifies the feature flag, while the activation block height determines when the feature flag will be activated.
 
-Feature flags can be activated or deactivated by submitting a governance transaction of type, `MessageFeatureFlagUpdate`.
+Feature flags can be activated or deactivated by submitting a governance transaction of type `MessageFeatureFlagUpdate`. This type of transaction includes the feature flag name and the activation block height as parameters.
 
-An example protobuf message for a `MessageFeatureFlagUpdate` transaction is as follows:
+A feature is enabled if the current block height is greater than or equal to the activation block height. A feature is disabled if the current block height is less than the activation block height. A feature can also be disabled by setting the activation block height to -1.
+
+Here is an example protobuf message for a `MessageFeatureFlagUpdate` transaction:
 
 ```protobuf
 message MessageFeatureFlagUpdate {
   string feature_flag_name = 1;
   int64 activation_block_height = 2;
 }
-
 ```
-
-A feature is enabled if the current block height is greater than or equal to the activation block height. A feature is disabled if the current block height is less than the activation block height. A feature can also be disabled by setting the activation block height to -1.
 
 ### Handling MessageFeatureFlagUpdate
 
-The `MessageFeatureFlagUpdate` message type needs to be handled in the utility module.
+The utility module will handle the `MessageFeatureFlagUpdate` message type. A new param owner needs to be introduced to the utility module to allow for the activation of feature flags. The param owner determines if the message sender has the authority to activate or deactivate feature flags
 
-https://github.com/pokt-network/pocket/blob/12f9f498c8b05a91f4c08c6b27227d94013d9232/utility/unit_of_work/tx_message_handler.go
+## Altering Protocol Functionality
 
-A new param owner needs to be introduced to the utility module to allow for the activation of feature flags. The param owner is used to determine if the message sender is allowed to activate or deactivate feature flags.
+Altering the functionality of the protocol using feature flags will follow a similar pattern to the governance controlled parameters. The key difference is that these changes can be more substantial, altering the fundamental operations of the network.
 
-https://github.com/pokt-network/pocket/blob/10a931a06f81902518a919ce33b9642f8388949c/utility/unit_of_work/tx_message_signers.go#L25-L26 https://github.com/pokt-network/pocket/blob/dbc0deb6a7aec39359745e9be952a4992689052a/build/config/genesis.json#L4242
+To modify the functionality of the protocol, a new feature flag must be introduced with a corresponding block height at which the new functionality will take effect. The activation or deactivation of these feature flags must be proposed and voted upon in a similar fashion to the governance controlled parameters.
+
+## Consensus Breaking Protocol Versions
+
+Consensus-breaking protocol versions introduce substantial changes to the protocol that may not be backward-compatible. These changes can disrupt the network consensus if not handled correctly.
+
+Feature flags offer a mechanism for introducing these changes in a controlled manner. The upgrade can be tied to a specific block height, allowing nodes to prepare and coordinate for the transition. Once the block height is reached, nodes that have not upgraded will be unable to participate in the consensus process, ensuring the stability of the network.
+
+To upgrade the protocol version, the `POKT gov upgrade` command can be used, which requires the block height (retrieved using the `curl -s -X POST ${POCKET_ENDPOINT}/v1/query/height` command), the DAO, and the new version as inputs.
+
+## CLI and RPC
+
+The CLI and RPC modules must be updated to handle the new transaction message types related to feature flags. They should provide functionalities to:
+
+- Query the current state of a feature flag.
+- Propose a new feature flag or an update to an existing one.
+- Submit votes for proposed feature flags.
+- Monitor the status of proposed feature flags and their votes.
+
+This ensures that network participants can smoothly interact with the new feature flag system.
+
+The detailed design and specification of these CLI and RPC updates will be covered in future versions of this spec.
 
 # References
 
